@@ -1,0 +1,152 @@
+body {
+  background-image: url("../../../Img/bckg.png") !important;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-clip: border-box;
+  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif !important;
+}
+.heading {
+  display: grid;
+  margin: 0;
+  height: 100vh;
+  width: 100vw;
+  justify-content: left;
+  letter-spacing: 2px;
+}
+.form {
+  margin: auto 0 auto 0;
+  color: black !important;
+  background-color: rgba(255, 255, 240, 0.6);
+  border: 1px solid white;
+  border-radius: 5px;
+  padding: 30px;
+  text-align: left;
+}
+@media (min-width: 1230px) {
+  .form {
+    width: 30vw;
+    margin-left: 5vw;
+  }
+}
+@media (min-width: 950px) and (max-width: 1230px) {
+  .form {
+    width: 40vw !important;
+    margin-left: 5vw;
+  }
+}
+@media (min-width: 770px) and (max-width: 950px) {
+  .form {
+    width: 50vw !important;
+    margin-left: 5vw;
+  }
+}
+@media (min-width: 400px) and (max-width: 770px) {
+  .form {
+    width: 100vw;
+    margin-left: 3vw;
+  }
+  body {
+    background: linear-gradient(blue, lightblue, white) !important;
+  }
+}
+@media (max-width: 400px) {
+  .form {
+    width: 100vw;
+  }
+  body {
+    background: linear-gradient(blue, lightblue, white) !important;
+  }
+}
+
+.form h3 {
+  background-color: rgb(1, 1, 161);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: block;
+}
+.form hr {
+  height: 3px;
+  background: rgb(1, 1, 161);
+}
+
+.form form .input-field {
+  width: 100%;
+  text-align: center;
+  position: relative;
+}
+.input-field input {
+  border: 1px solid lightgreen;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgb(1, 1, 161);
+  border-right: 1px solid rgb(1, 1, 161);
+  width: 100%;
+  color: blue;
+  margin: 15px 0 15px 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  padding: 0 20px 0 20px;
+  transition: all 0.6s;
+}
+
+.input-field input:focus {
+  outline: none;
+  box-shadow: 5px 5px 5px rgb(1, 1, 161);
+}
+
+.input-field input::placeholder {
+  text-decoration-style: wavy;
+  color: rgba(0, 0, 255, 0.6);
+}
+
+.submit-button {
+  background-color: rgb(1, 1, 161);
+  border: 2px solid rgb(1, 1, 161);
+  border-radius: 10px;
+  min-width: 120px;
+  padding: 5px;
+  animation: 2s;
+  color: white;
+  transition: all 0.6s;
+  letter-spacing: 2px;
+  font-weight: 500;
+  animation: 2s;
+}
+
+.btn-container {
+  display: flex;
+  margin-top: 30px;
+  justify-content: space-between;
+  overflow: auto;
+}
+
+.submit-button:hover {
+  background-color: white;
+  border-radius: 0;
+  color: rgb(1, 1, 161);
+}
+
+@media screen and (max-width: 768px) {
+  .form {
+    width: 100%;
+  }
+}
+
+.input-field label {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  font-size: 20px;
+  font-weight: bold;
+  pointer-events: none;
+  color: rgb(1, 1, 161);
+  transition: all 0.3s ease-in-out;
+}
+
+.input-field input:focus ~ label,
+.input-field input:valid ~ label {
+  top: -12px;
+  font-size: 16px;
+}

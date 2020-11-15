@@ -1,0 +1,37 @@
+.header {
+  background-color: #5c6ac4;
+  color: white;
+  width: 100% !important;
+  height: 10vh;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 1 !important;
+}
+.header .navbar-brand {
+  margin: 5px !important;
+  padding: 5px !important;
+}
+.header .navber-link {
+  transition: 0.5s ease-in-out;
+}
+.header .navber-link:hover {
+  background-color: white !important;
+  color: black !important;
+}
+
+.navbar-brand::selection .icon-holder h5 {
+  display: inline;
+}
+
+.show-lable .icon-holder label {
+  width: auto;
+  opacity: 1;
+  transition: 0.5s ease-in-out;
+}
+
+.menu-icon {
+  width: auto;
+  height: 100%;
+  transition: ease-in-out;
+  cursor: pointer;
+}

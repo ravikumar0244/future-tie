@@ -1,0 +1,108 @@
+.bg-custom {
+  background: #5c6ac4;
+}
+.left-menu {
+  width: fit-content;
+  z-index: 100;
+  background-color: #5c6ac4;
+  overflow: hidden;
+  position: fixed;
+  height: 100vh;
+  left: -50vw;
+  transition: 0.3s ease;
+}
+.left-menu .icon-holder .nav-link img {
+  width: 8vw;
+  margin: 0 3vw 0 0;
+  padding: 5px;
+  transition: 0.3s ease-in-out;
+}
+
+.left-menu .icon-holder:hover .nav-link img {
+  padding: 0;
+}
+
+.icon-holder {
+  max-width: auto;
+  padding: 2vw 0;
+  cursor: pointer;
+}
+.icon-holder .nav-link {
+  width: 100% !important;
+  height: 100% !important;
+}
+.icon-holder:hover {
+  background-color: #445699;
+}
+
+.icon-holder .nav-link label {
+  color: #fff;
+  margin: 0;
+  cursor: pointer;
+  padding: 0;
+  display: inline;
+}
+.active-link:any-link img {
+  padding: 0;
+}
+
+.active-link {
+  background-color: #445699;
+  transition: 0.3s ease-in-out;
+}
+.show-left-menu {
+  left: 0;
+}
+@media screen and (min-width: 768px) {
+  .left-menu {
+    left: 0;
+    position: static;
+    z-index: 100;
+    min-width: 100%;
+    transition: 0.3s ease;
+  }
+  .icon-holder {
+    margin: 0;
+    width: 100%;
+    padding: 1vh 0;
+  }
+  .left-menu .icon-holder .nav-link img {
+    width: 3vw;
+    margin: 0 !important;
+  }
+  .left-menu .icon-holder .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .left-menu .icon-holder .nav-link label {
+    width: 0;
+    flex: 0;
+    opacity: 0;
+    text-align: center;
+    overflow: hidden;
+    transition: 0.3s ease;
+  }
+  .show-left-menu {
+    position: relative;
+  }
+  .show-left-menu .icon-holder .nav-link img {
+    margin: 0 1vw 0 0 !important;
+  }
+  .show-left-menu .icon-holder .nav-link label {
+    width: auto;
+    flex: 1;
+    text-align: left;
+    opacity: 1;
+  }
+}
+@media screen and (max-width: 992px) {
+  .icon-holder {
+    max-width: auto;
+    padding: 1vw 0;
+    cursor: pointer;
+  }
+  .icon-holder label {
+    font-size: 2.4vw;
+  }
+}

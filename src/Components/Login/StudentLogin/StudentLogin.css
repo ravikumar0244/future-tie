@@ -1,0 +1,143 @@
+.heading {
+  display: grid;
+  margin: 0;
+  height: 100vh;
+  width: 100vw;
+}
+
+@media (min-width: 780px) {
+  .heading {
+    background-image: url("../../../Img/bckg.png") !important;
+    background-clip: border-box !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    background-size: cover !important;
+    background-position: center !important;
+  }
+}
+.form {
+  background-color: rgba(255, 255, 255, 0.6);
+  padding: 5px;
+  border-radius: 10px;
+  margin: auto 2vw;
+  width: 30vw;
+  text-align: left;
+}
+.form h1 {
+  font-size: 20px;
+  color: #021ed3;
+}
+
+.form h1,
+button.register-btn {
+  display: block;
+}
+
+button.register-btn {
+  font-size: 16px;
+  padding: 0;
+  max-width: 100px !important;
+  border: 1px solid #021ed3;
+  color: #5c6ac4;
+  transition: 0.3s ease;
+}
+button.register-btn:hover {
+  background-color: #021ed3;
+  color: #fff;
+}
+.form hr {
+  margin-top: 5px;
+  height: 0.1vw;
+  background: #021ed3;
+}
+
+.form form .input-field {
+  width: 90%;
+  text-align: center;
+  position: relative;
+}
+.input-field input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #021ed3;
+  width: 100%;
+  color: #021ed3;
+  /* margin-top: 5px; */
+  font-size: 14px;
+  font-weight: normal;
+  padding: 10px;
+  border-radius: 4px;
+  transition: 0.6s ease-in-out;
+}
+.input-field label {
+  margin-left: 2vw;
+  position: absolute;
+  top: 10px;
+  left: 0px;
+  font-size: 16px;
+  font-weight: 500;
+  pointer-events: none;
+  color: #021ed3;
+  transition: all 0.3s ease-in-out;
+}
+
+.input-field input:focus {
+  outline: none;
+  box-shadow: 2px 2px 4px 2px rgba(1, 1, 161, 0.5);
+  border: none;
+  margin-top: 5px;
+}
+
+.btn-container {
+  margin-top: 15px;
+  justify-content: space-between;
+  overflow: auto;
+}
+
+.submit-button {
+  background-color: #021ed3;
+  border: 1px solid #021ed3;
+  display: block;
+  border-radius: 7px;
+  min-width: 100px;
+  padding: 5px;
+  animation: 0.3s;
+  color: white;
+  transition: all 0.6s;
+  animation: 1.2s;
+}
+
+.submit-button:hover {
+  border: 1px solid rgb(1, 1, 161) !important;
+  background-color: rgba(255, 255, 255, 0.5);
+  color: rgb(1, 1, 201);
+}
+
+@media screen and (max-width: 768px) {
+  .form {
+    width: 100vw;
+  }
+}
+@media screen and (max-width: 990px) {
+  .form {
+    width: 90vw;
+  }
+  .input-field input {
+    margin: 2vw 0;
+  }
+}
+
+.input-field input:focus ~ label,
+.input-field input:valid ~ label {
+  top: -18px;
+  font-size: 12px;
+  margin: 5px;
+}
+
+.err {
+  width: 100%;
+  padding-left: 20%;
+  padding-right: 20%;
+  font-size: 10px;
+  color: red;
+}

@@ -1,14 +1,20 @@
 import { firestore } from "firebase";
 import React from "react";
-import { Redirect } from "react-router-dom";
+import { DisplayProfile } from "./displayProfile";
 import Select from "react-select";
-import { auth, storage } from "../../../firebase/config";
+import { auth, storage } from "../../../../firebase/config";
+import { Error } from "../../../Error/error";
 import "./styles.css";
 
 export default class AgentProfile extends React.Component {
+  downloadUrls = null;
   state = {
     loading: true,
-    data: {},
+    profile: {
+      verified: true,
+      recruitFrom: [],
+    },
+    verified: false,
     countries: null,
     profileExist: false,
     btnLoading: false,
@@ -21,89 +27,65 @@ export default class AgentProfile extends React.Component {
     let name = e.target.name;
     let val = e.target.value;
     this.setState((s) => ({
-      data: {
-        ...s.data,
+      profile: {
+        ...s.profile,
         [name]: val,
       },
     }));
   };
 
-  storageHandler = (name, file) => {
-    if (!file || !this.state.user || !name) {
-      return;
-    }
-    storage
-      .ref(`/agentImages/${this.state.user.uid}/`)
-      .listAll()
-      .catch((e) => {
-        this.setState({
-          loading: false,
-          error: {
-            exist: true,
-            msg: e.message,
-          },
-        });
-      })
-      .then((lst) => {
-        if (lst.length === 0) return false;
-        lst.items.forEach((file) => file.delete());
-      })
-      .then(() => {
-        const task = storage
-          .ref(`/agentImages/${this.state.user.uid}/${file.name}`)
-          .put(file);
-        task.on(
-          "state_changed",
-          (ss) => {
-            console.log(ss);
-          },
-          (err) => {
-            console.log(err);
-            this.setState({ loading: false });
-          },
-          () => {
-            const doc = storage.ref(
-              `agentImages/${this.state.user.uid}/${file.name}`
-            );
-            doc
-              .getDownloadURL()
-              .then((url) => {
-                this.setState((s) => ({
-                  data: {
-                    ...s.data,
-                    documentUrls: {
-                      [name]: url,
-                    },
-                  },
-                }));
-                return { [name]: url };
-              })
-              .catch((e) => {
-                this.setState({
-                  error: {
-                    exist: true,
-                    msg: e.message,
-                  },
-                  loading: false,
-                });
+  // storageHandler = async (files) => {
+  //   if (!files || !this.state.user) {
+  //     return;
+  //   }
+  storageHandler = (files) =>
+    new Promise((res, rej) => {
+      let downloadUrls = new Object();
+      if (files.length > 0) {
+        storage.ref(`/agentImages/${this.state.user.uid}/`).delete();
+
+        files.map(async (file) => {
+          const task = storage
+            .ref(`/agentImages/${this.state.user.uid}/${file.name}`)
+            .put(file.file);
+          task.on(
+            "state_changed",
+            () => console.log(""),
+            (err) => {
+              console.log(err);
+              this.setState({
+                loading: false,
+                btnLoading: false,
+                error: { exist: true, msg: err.message },
               });
-          }
-        );
-      })
-      .catch((e) => {
-        this.setState({
-          loading: false,
-          error: {
-            exist: true,
-            msg: e.message,
-          },
+            },
+            async () => {
+              console.log("FILE CALLBACK");
+              const doc = storage.ref(
+                `agentImages/${this.state.user.uid}/${file.name}`
+              );
+              doc
+                .getDownloadURL()
+                .then(async (url) => {
+                  return await url;
+                })
+                .then((u) => {
+                  console.log(u);
+                  downloadUrls[file.name] = u;
+                });
+            }
+          );
         });
-      });
-  };
+
+        res(downloadUrls);
+      } else {
+        res(null);
+      }
+    });
+
   hanldeFileChange = (e) => {
     let file = e.target.files[0];
     let name = e.target.name;
-    // this.storageHandler(name, file);
   };
   componentDidMount() {
     auth.onAuthStateChanged((u) => {
@@ -168,11 +150,20 @@ export default class AgentProfile extends React.Component {
       .doc("Details")
       .get()
       .then((doc) => {
+        if (!doc.exists) {
+          console.log("DAHBOARD PROFILE NOT EXIXT");
+          this.setState({ profileExist: false, loading: false });
+          return;
+        }
         let check = Object.keys(doc.data()).length;
-        if (check > 2) {
+        if (check > 0) {
           console.log("PROFILE PROFILE EXIST");
 
-          this.setState({ profileExist: true, loading: false });
+          this.setState({
+            profileExist: true,
+            loading: false,
+            profile: doc.data(),
+          });
           return;
         } else {
           console.log("PROFILE PROFILE NO");
@@ -195,30 +186,71 @@ export default class AgentProfile extends React.Component {
     this.setState({ btnLoading: true });
     let buisnessCertificate = e.target.b_certificate.files[0];
     let companyLogo = e.target.companyLogo.files[0];
-    this.storageHandler("buisnessCert", buisnessCertificate);
-    this.storageHandler("companyLogo", companyLogo);
+    let files = [];
 
-    await firestore()
-      .collection("Agents")
-      .doc(`${this.state.user.uid}`)
-      .collection("Profile")
-      .doc("Details")
-      .set({
-        ...this.state.data,
-      })
-      .then(() => {
-        this.checkAgentProfile(this.state.user);
-      })
-      .catch((e) => {
-        this.setState({
-          error: {
-            exist: true,
-            msg: e.message,
-          },
-        });
-      });
+    if (buisnessCertificate)
+      files.push({ name: "BuisnessCertificate", file: buisnessCertificate });
+    if (companyLogo) files.push({ name: "CompanyLogo", file: companyLogo });
+
+    this.storageHandler(files).then((res) => {
+      console.log("IN RES");
+      if (res) {
+        console.log("FILE EXIST", res);
+        this.setState(
+          (s) => ({ profile: { ...s.profile, downloadUrls: res } }),
+          () => {
+            console.log("in CALLBACK");
+            firestore()
+              .collection("Agents")
+              .doc(`${this.state.user.uid}`)
+              .collection("Profile")
+              .doc("Details")
+              .set({
+                ...this.state.profile,
+              })
+              .then(() => {
+                this.checkAgentProfile(this.state.user);
+                this.setState({ btnLoading: false });
+              })
+              .catch((e) => {
+                this.setState({
+                  error: {
+                    exist: true,
+                    msg: e.message,
+                  },
+                  btnLoading: false,
+                });
+              });
+          }
+        );
+      } else {
+        firestore()
+          .collection("Agents")
+          .doc(`${this.state.user.uid}`)
+          .collection("Profile")
+          .doc("Details")
+          .set({
+            ...this.state.profile,
+          })
+          .then(() => {
+            this.checkAgentProfile(this.state.user);
+            this.setState({ btnLoading: false });
+          })
+          .catch((e) => {
+            this.setState({
+              error: {
+                exist: true,
+                msg: e.message,
+              },
+              btnLoading: false,
+            });
+          });
+      }
+    });
   };
+
   render() {
+    console.log(this.state.profile);
     if (this.state.loading) {
       return (
         <div className="text-center p-3">
@@ -227,26 +259,34 @@ export default class AgentProfile extends React.Component {
       );
     }
     if (this.state.profileExist) {
-      return <Redirect to="/agent" />;
-    }
-    if (this.state.error.exist) {
       return (
-        <h3 className="text-danger p-3 text-center">{this.state.error.msg}</h3>
+        <DisplayProfile
+          data={this.state.profile}
+          handleEdit={() => this.setState({ profileExist: false })}
+        />
       );
     }
+    if (this.state.error.exist) {
+      return <Error msg={this.state.error.msg} />;
+    }
     return (
-      <div className="main-form-container m-0">
-        <div className="form-container text-lg-left container-fluid">
+      <div className="m-0">
+        <div className="form-container p-0 text-lg-left container-fluid">
+          <div
+            className="sticky-top text-left align-items-baseline d-flex bg-light col-12 p-2"
+            style={{ zIndex: 1 }}
+          >
+            <h1>Agent Profile</h1>
+            <span className="text-danger mx-2 px-2">
+              Please Complete Your Profile
+            </span>
+          </div>
           <form
             onSubmit={this.handleSubmit}
             className="row justify-content-center justify-content-lg-start mt-2"
           >
-            <div className="sticky-top d-flex justify-content-between bg-light col-12 p-2">
-              <h1 className="d-inline">Agent Profile</h1>
-              <button className="d-inline">Logout</button>
-            </div>
-            <div className="col-12 p-2 text-primary border-primary m-2 border-bottom text-left pl-5">
-              <h2>Company Information</h2>
+            <div className="col-12 p-2 border-color m-2 text-left pl-5">
+              <h2 className="btn-text-color">Company Information</h2>
             </div>
             <div className="form-group col-8 col-lg-6 ">
               <div className="w-75 m-auto">
@@ -258,7 +298,7 @@ export default class AgentProfile extends React.Component {
                   // required
                   id="companyName"
                   onChange={this.handleChange}
-                  value={this.state.companyName}
+                  value={this.state.profile.companyName}
                   className="form-control p-3"
                   name="companyName"
                   placeholder="Company Name"
@@ -271,11 +311,11 @@ export default class AgentProfile extends React.Component {
                   Email<span className="text-danger">*</span>
                 </label>
                 <input
-                  type="name"
+                  type="email"
                   // required
                   id="agentEmail"
                   onChange={this.handleChange}
-                  value={this.state.agentEmail}
+                  value={this.state.profile.agentEmail}
                   className="form-control p-3"
                   name="agentEmail"
                   placeholder="Email"
@@ -291,7 +331,7 @@ export default class AgentProfile extends React.Component {
                   type="url"
                   id="agentWebsite"
                   onChange={this.handleChange}
-                  value={this.state.agentWebsite}
+                  value={this.state.profile.agentWebsite}
                   className="form-control p-3"
                   name="agentWebsite"
                   placeholder="Website"
@@ -307,7 +347,7 @@ export default class AgentProfile extends React.Component {
                   type="url"
                   id="fbPageName"
                   onChange={this.handleChange}
-                  value={this.state.fbPageName}
+                  value={this.state.profile.fbPageName}
                   className="form-control p-3"
                   name="fbPageName"
                   placeholder="Facebook"
@@ -323,7 +363,7 @@ export default class AgentProfile extends React.Component {
                   type="url"
                   id="igHandle"
                   onChange={this.handleChange}
-                  value={this.state.igHandle}
+                  value={this.state.profile.igHandle}
                   className="form-control p-3"
                   name="igHandle"
                   placeholder="Instagram"
@@ -339,7 +379,7 @@ export default class AgentProfile extends React.Component {
                   type="url"
                   id="twitterHandle"
                   onChange={this.handleChange}
-                  value={this.state.twitterHandle}
+                  value={this.state.profile.twitterHandle}
                   className="form-control p-3"
                   name="twitterHandle"
                   placeholder="Twitter"
@@ -355,15 +395,15 @@ export default class AgentProfile extends React.Component {
                   type="url"
                   id="linkedInUrl"
                   onChange={this.handleChange}
-                  value={this.state.linkedInUrl}
+                  value={this.state.profile.linkedInUrl}
                   className="form-control p-3"
                   name="linkedInUrl"
                   placeholder="LinkedIn Url"
                 />
               </div>
             </div>
-            <div className="col-12 p-2 text-primary border-primary m-2 border-bottom text-left pl-5">
-              <h2>Contact Information</h2>
+            <div className="col-12 p-2 m-2 border-color text-left pl-5">
+              <h2 className="btn-text-color">Contact Information</h2>
             </div>
             <div className="form-group col-8 col-lg-6">
               <div className="w-75 m-auto">
@@ -375,7 +415,7 @@ export default class AgentProfile extends React.Component {
                   name="agentSource"
                   id="agentSource"
                   // required
-                  value={this.state.source}
+                  value={this.state.profile.source}
                   onChange={this.handleChange}
                 >
                   <option value="">Main Source Of Students</option>
@@ -393,7 +433,7 @@ export default class AgentProfile extends React.Component {
                   // required
                   id="firstName"
                   onChange={this.handleChange}
-                  value={this.state.firstName}
+                  value={this.state.profile.firstName}
                   className="form-control p-3"
                   name="firstName"
                   placeholder="Legal First Name"
@@ -410,7 +450,7 @@ export default class AgentProfile extends React.Component {
                   // required
                   id="lastName"
                   onChange={this.handleChange}
-                  value={this.state.lastName}
+                  value={this.state.profile.lastName}
                   className="form-control p-3"
                   name="lastName"
                   placeholder="Legal Last Name"
@@ -427,7 +467,7 @@ export default class AgentProfile extends React.Component {
                   // required
                   id="streetAddress"
                   onChange={this.handleChange}
-                  value={this.state.streetAddress}
+                  value={this.state.profile.streetAddress}
                   className="form-control p-3"
                   name="streetAddress"
                   placeholder="Street Address"
@@ -444,7 +484,7 @@ export default class AgentProfile extends React.Component {
                   // required
                   id="city"
                   onChange={this.handleChange}
-                  value={this.state.city}
+                  value={this.state.profile.city}
                   className="form-control p-3"
                   name="city"
                   placeholder="City"
@@ -461,7 +501,7 @@ export default class AgentProfile extends React.Component {
                   // required
                   id="state"
                   onChange={this.handleChange}
-                  value={this.state.state}
+                  value={this.state.profile.state}
                   className="form-control p-3"
                   name="state"
                   placeholder="State"
@@ -478,7 +518,7 @@ export default class AgentProfile extends React.Component {
                   // required
                   id="country"
                   onChange={this.handleChange}
-                  value={this.state.country}
+                  value={this.state.profile.country}
                   className="form-control p-3"
                   name="country"
                   placeholder="Country"
@@ -495,7 +535,7 @@ export default class AgentProfile extends React.Component {
                   id="postalCode"
                   // required
                   onChange={this.handleChange}
-                  value={this.state.postalCode}
+                  value={this.state.profile.postalCode}
                   className="form-control p-3"
                   name="postalCode"
                   placeholder="Postal Code"
@@ -512,7 +552,7 @@ export default class AgentProfile extends React.Component {
                   id="phoneNumber"
                   // required
                   onChange={this.handleChange}
-                  value={this.state.phoneNumber}
+                  value={this.state.profile.phoneNumber}
                   className="form-control p-3"
                   name="phoneNumber"
                   placeholder="Phone"
@@ -528,7 +568,7 @@ export default class AgentProfile extends React.Component {
                   type="cell"
                   id="cellNumber"
                   onChange={this.handleChange}
-                  value={this.state.cellNumber}
+                  value={this.state.profile.cellNumber}
                   className="form-control p-3"
                   name="cellNumber"
                   placeholder="Cell Number"
@@ -544,7 +584,7 @@ export default class AgentProfile extends React.Component {
                   type="text"
                   id="skypeId"
                   onChange={this.handleChange}
-                  value={this.state.skypeId}
+                  value={this.state.profile.skypeId}
                   className="form-control p-3"
                   name="skypeId"
                   placeholder="Cell Number"
@@ -560,15 +600,15 @@ export default class AgentProfile extends React.Component {
                   type="text"
                   id="whatsAppId"
                   onChange={this.handleChange}
-                  value={this.state.whatsAppId}
+                  value={this.state.profile.whatsAppId}
                   className="form-control p-3"
                   name="whatsAppId"
                   placeholder="Cell Number"
                 />
               </div>
             </div>
-            <div className="col-12 p-2 text-primary border-primary m-2 border-bottom text-left pl-5">
-              <h2>Recruitment Information</h2>
+            <div className="col-12 p-2 m-2 border-color text-left pl-5">
+              <h2 className="btn-text-color">Recruitment Information</h2>
             </div>
             <div className="form-group col-8 col-lg-6">
               <div className="w-75 m-auto">
@@ -579,7 +619,7 @@ export default class AgentProfile extends React.Component {
                   type="text"
                   id="startYear"
                   onChange={this.handleChange}
-                  value={this.state.startYear}
+                  value={this.state.profile.startYear}
                   className="form-control p-3"
                   name="startYear"
                 />
@@ -595,7 +635,7 @@ export default class AgentProfile extends React.Component {
                   type="text"
                   id="servicesOffered"
                   onChange={this.handleChange}
-                  value={this.state.servicesOffered}
+                  value={this.state.profile.servicesOffered}
                   className="form-control p-3"
                   name="servicesOffered"
                   // required
@@ -611,7 +651,7 @@ export default class AgentProfile extends React.Component {
                   type="text"
                   id="institutionsRep"
                   onChange={this.handleChange}
-                  value={this.state.institutionsRep}
+                  value={this.state.profile.institutionsRep}
                   className="form-control p-3"
                   name="institutionsRep"
                 />
@@ -623,15 +663,19 @@ export default class AgentProfile extends React.Component {
                   Where do you recruit from?
                 </label>
                 <Select
-                  options={this.state.countries}
+                  options={this.state.profile.countries}
                   name="selectFrom"
                   onChange={(e) => {
-                    this.setState((s) => ({
-                      data: {
-                        ...s.data,
-                        recruitFrom: e,
-                      },
-                    }));
+                    let val = e.map((item) => item.label);
+                    this.setState(
+                      (s) => ({
+                        profile: {
+                          ...s.profile,
+                          recruitFrom: val,
+                        },
+                      }),
+                      () => console.log(this.state)
+                    );
                   }}
                   isMulti
                 />
@@ -648,7 +692,7 @@ export default class AgentProfile extends React.Component {
                   // required
                   id="eduAssociations"
                   onChange={this.handleChange}
-                  value={this.state.eduAssociations}
+                  value={this.state.profile.eduAssociations}
                   className="form-control p-3"
                   name="eduAssociations"
                 />
@@ -663,7 +707,7 @@ export default class AgentProfile extends React.Component {
                   className="custom-select"
                   name="studentsEveryYear"
                   id="studentsEveryYear"
-                  value={this.state.studentsEveryYear}
+                  value={this.state.profile.studentsEveryYear}
                   onChange={this.handleChange}
                 >
                   <option value="">Select..</option>
@@ -691,10 +735,12 @@ export default class AgentProfile extends React.Component {
                   ]}
                   name="marketingMethods"
                   onChange={(e) => {
+                    let val = e.map((item) => item.label);
+
                     this.setState((s) => ({
-                      data: {
-                        ...s.data,
-                        marketingMethods: e,
+                      profile: {
+                        ...s.profile,
+                        marketingMethods: val,
                       },
                     }));
                   }}
@@ -704,14 +750,14 @@ export default class AgentProfile extends React.Component {
             </div>
             <div className="form-group col-8 col-lg-6">
               <div className="w-75 m-auto">
-                <label htmlFor="studentsEveryYear" className="text-left">
+                <label htmlFor="averageFee" className="text-left">
                   Average Service Fee
                 </label>
                 <select
                   className="custom-select"
-                  name="studentsEveryYear"
-                  id="studentsEveryYear"
-                  value={this.state.studentsEveryYear}
+                  name="averageFee"
+                  id="averageFee"
+                  value={this.state.profile.averageFee}
                   onChange={this.handleChange}
                 >
                   <option value="">Select..</option>
@@ -732,7 +778,7 @@ export default class AgentProfile extends React.Component {
                   className="custom-select"
                   name="studentsEveryYearFT"
                   id="studentsEveryYearFT"
-                  value={this.state.studentsEveryYear}
+                  value={this.state.profile.studentsEveryYear}
                   onChange={this.handleChange}
                 >
                   <option value="">Select..</option>
@@ -753,7 +799,7 @@ export default class AgentProfile extends React.Component {
                   type="text"
                   id="refName"
                   onChange={this.handleChange}
-                  value={this.state.refName}
+                  value={this.state.profile.refName}
                   className="form-control p-3"
                   name="refName"
                 />
@@ -768,7 +814,7 @@ export default class AgentProfile extends React.Component {
                   type="text"
                   id="refInstName"
                   onChange={this.handleChange}
-                  value={this.state.refInstName}
+                  value={this.state.profile.refInstName}
                   className="form-control p-3"
                   name="refInstName"
                 />
@@ -783,7 +829,7 @@ export default class AgentProfile extends React.Component {
                   type="email"
                   id="refEmail"
                   onChange={this.handleChange}
-                  value={this.state.refEmail}
+                  value={this.state.profile.refEmail}
                   className="form-control p-3"
                   name="refEmail"
                 />
@@ -795,10 +841,10 @@ export default class AgentProfile extends React.Component {
                   Reference Phone Number
                 </label>
                 <input
-                  type="email"
+                  type="cell"
                   id="refPhone"
                   onChange={this.handleChange}
-                  value={this.state.refPhone}
+                  value={this.state.profile.refPhone}
                   className="form-control p-3"
                   name="refPhone"
                 />
@@ -810,10 +856,10 @@ export default class AgentProfile extends React.Component {
                   Reference Websites
                 </label>
                 <input
-                  type="email"
+                  type="url"
                   id="refWebsite"
                   onChange={this.handleChange}
-                  value={this.state.refWebsite}
+                  value={this.state.profile.refWebsite}
                   className="form-control p-3"
                   name="refWebsite"
                 />
@@ -826,7 +872,6 @@ export default class AgentProfile extends React.Component {
                 </label>
                 <input
                   type="file"
-                  // required
                   className="form-control-file"
                   id="companyLogo"
                   style={{
@@ -863,19 +908,14 @@ export default class AgentProfile extends React.Component {
                   id="verified"
                   onChange={(e) => {
                     let check = e.target.checked;
-                    this.setState((s) => ({
-                      data: {
-                        ...s.data,
-                        verified: check,
-                      },
-                    }));
+                    this.setState({ verified: check });
                   }}
                   // required
-                  value={this.state.verified}
-                  className="form-control p-0 m-0 w-25"
+                  value={this.state.profile.verified}
+                  className="form-control p-5 m-2 col-1"
                   name="verified"
                 />
-                <label htmlFor="verified" className="w-75 px-1 text-left">
+                <label htmlFor="verified" className="col px-1 text-left">
                   I declare that the information contained in this application
                   and all supporting documentation is true and correct.
                   <span className="text-danger">*</span>
@@ -883,10 +923,15 @@ export default class AgentProfile extends React.Component {
               </div>
             </div>
             <div className="col-12 text-center">
+              {this.state.verified ? null : (
+                <h3 className="p-2 text-danger">
+                  Check the above box to continue
+                </h3>
+              )}
               <button
                 className="btn btn-primary"
                 type="submit"
-                disabled={this.state.btnLoading}
+                disabled={this.state.btnLoading || !this.state.verified}
               >
                 {this.state.btnLoading ? (
                   <div className="spinner-border"></div>

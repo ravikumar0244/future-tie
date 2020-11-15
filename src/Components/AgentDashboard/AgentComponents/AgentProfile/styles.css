@@ -1,0 +1,18 @@
+.main-form-container {
+  height: 100vh !important;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  background-color: white;
+}
+.main-form-container::-webkit-scrollbar {
+  width: 0.5vw;
+}
+
+.main-form-container::-webkit-scrollbar-thumb {
+  background: #5c6ac4;
+  border-radius: 10px;
+}
+
+.custom-select::selection {
+  background-color: red;
+}
